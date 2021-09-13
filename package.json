@@ -8,7 +8,7 @@
     "start": "TS_NODE_PROJECT=\"webpack.tsconfig.json\" webpack-dev-server"
   },
   "dependencies": {
-    "@principia/base": "^0.16.3",
+    "@principia/base": "^0.16.4",
     "react": "^17.0.2",
     "react-dom": "^17.0.2"
   },

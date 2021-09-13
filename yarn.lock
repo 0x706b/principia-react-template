@@ -1055,10 +1055,10 @@
     "@nodelib/fs.scandir" "2.1.5"
     fastq "^1.6.0"
 
-"@principia/base@^0.16.3":
-  version "0.16.3"
-  resolved "https://registry.yarnpkg.com/@principia/base/-/base-0.16.3.tgz#a19040a975a054b38ece61e6e8059b355774d8fd"
-  integrity sha512-iLNDWLIeDNWlpRrfkvdTf6MmpBqhBKWc/vEoL+hy3Z4mJvEF2nRoTm8xnf7aPihQORlstHL7VvbH/BotCOE+TA==
+"@principia/base@^0.16.4":
+  version "0.16.4"
+  resolved "https://registry.yarnpkg.com/@principia/base/-/base-0.16.4.tgz#00edc40bb8d1f80174c5f4cf700435c6a0e4a859"
+  integrity sha512-HrvHxRkYECZHrJgLQ7V8wj35a+MYM233yK331GBptSJe30t4zEoQoRqx+Z92vwCE6hTl7GyP4ODcCPc1Ph47rA==
   dependencies:
     "@principia/compile" "^0.17.0"
 
