@@ -1,0 +1,24 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "lib": ["es2020", "dom"],
+    "baseUrl": ".",
+    "module": "ESNext",
+    "jsx": "react",
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "moduleResolution": "node",
+    "strict": true,
+    "downlevelIteration": true,
+    "skipLibCheck": true,
+    "plugins": [
+      {
+        "transform": "@principia/compile",
+        "relativeProjectRoot": "./",
+        "tracing": false,
+        "specifierExtension": false
+      }
+    ]
+  },
+  "exclude": ["node_modules", "dist"]
+}
