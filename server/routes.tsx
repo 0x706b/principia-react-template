@@ -32,13 +32,15 @@ export const SSR = e.get('*', (req, res) =>
                   errored = true
                   console.error(err)
                 },
+                onCompleteShell: () => {
+                  const start    = htmlStart(entry)
+                  res.statusCode = errored ? 500 : 200
+                  res.setHeader('content-type', 'text/html')
+                  res.write(start)
+                  pipe(res)
+                },
               },
             )
-            const start    = htmlStart(entry)
-            res.statusCode = errored ? 500 : 200
-            res.setHeader('content-type', 'text/html')
-            res.write(start)
-            pipe(res)
           }),
       ),
     )
