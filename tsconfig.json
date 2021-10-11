@@ -18,7 +18,8 @@
         "tracing": false,
         "specifierExtension": false
       }
-    ]
+    ],
+    "types": ["react/next", "react-dom/next"]
   },
   "exclude": ["node_modules", "dist"]
 }

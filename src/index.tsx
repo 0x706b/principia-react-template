@@ -1,11 +1,19 @@
 import React from 'react'
 import ReactDOM from 'react-dom'
+import { BrowserRouter } from 'react-router-dom'
 
-import { HotApp } from './App'
+import { App } from './App'
 
-ReactDOM.render(
+const root = document.getElementById('app')
+
+if (!root) {
+  throw new Error('Failed to find the root element')
+}
+
+ReactDOM.createRoot(root, { hydrate: true }).render(
   <React.StrictMode>
-    <HotApp />
+    <BrowserRouter>
+      <App />
+    </BrowserRouter>
   </React.StrictMode>,
-  document.getElementById('app'),
 )

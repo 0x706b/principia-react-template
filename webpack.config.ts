@@ -1,16 +1,89 @@
 import type { Configuration } from 'webpack'
 
+import CopyWebpackPlugin from 'copy-webpack-plugin'
 import EslintWebpackPlugin from 'eslint-webpack-plugin'
-import HtmlWebpackPlugin from 'html-webpack-plugin'
 import * as path from 'path'
+import WebpackNodeExternals from 'webpack-node-externals'
+import RouteManifestPlugin from 'webpack-route-manifest'
 
 const isProd         = process.env.ENV === 'prod'
 process.env.NODE_ENV = isProd ? 'production' : 'development'
 
-const config: Configuration & { devServer?: {} } = {
+const server: Configuration = {
   mode: isProd ? 'production' : 'development',
   context: __dirname,
-  entry: ['react-hot-loader/patch', './src'],
+  ...(isProd ? {} : { devtool: 'inline-source-map' }),
+  entry: {
+    server: { import: './server' },
+  },
+  target: 'node',
+  externalsPresets: { node: true },
+  externals: [
+    // @ts-expect-error
+    WebpackNodeExternals({
+      allowlist: ['solid-app-router', 'solid-js', 'solid-js/web'],
+    }),
+    {
+      ['./public/route-manifest.json']:
+        'require("./public/route-manifest.json")',
+    },
+  ],
+  module: {
+    rules: [
+      {
+        test: /\.tsx?$/,
+        exclude: /node_modules/,
+        use: [
+          {
+            loader: 'babel-loader',
+            options: {
+              presets: [['@babel/preset-react', { runtime: 'automatic' }]],
+            },
+          },
+          {
+            loader: 'ts-loader',
+          },
+        ],
+      },
+      {
+        test: /\.jsx$/,
+        use: [
+          {
+            loader: 'babel-loader',
+            options: {
+              presets: ['@babel/preset-react'],
+            },
+          },
+        ],
+      },
+      {
+        test: /\.css$/,
+        use: ['ignore-loader'],
+      },
+    ],
+  },
+  plugins: [
+    new EslintWebpackPlugin({
+      extensions: ['ts', 'tsx'],
+    }),
+  ],
+  output: {
+    path: path.resolve(__dirname, 'dist'),
+    filename: '[name].js',
+  },
+  resolve: {
+    extensions: ['.tsx', '.ts', '.js', '.jsx'],
+    conditionNames: ['default', 'import', 'solid', 'node'],
+  },
+  experiments: {
+    topLevelAwait: true,
+  },
+}
+
+const client: Configuration & { devServer?: {} } = {
+  mode: isProd ? 'production' : 'development',
+  context: __dirname,
+  entry: './src/index',
   ...(isProd ? {} : { devtool: 'inline-source-map' }),
   module: {
     rules: [
@@ -23,9 +96,8 @@ const config: Configuration & { devServer?: {} } = {
             options: {
               plugins: [
                 ['babel-plugin-styled-components', { pure: true }],
-                'react-hot-loader/babel',
               ],
-              presets: ['@babel/preset-env', '@babel/preset-react'],
+              presets: ['@babel/preset-env', ['@babel/preset-react', { runtime: 'automatic' }]],
             },
           },
           {
@@ -41,20 +113,37 @@ const config: Configuration & { devServer?: {} } = {
   },
   resolve: {
     extensions: ['.tsx', '.ts', '.js', '.jsx'],
-    alias: {
-      'react-dom': '@hot-loader/react-dom',
-    },
   },
   output: {
-    path: path.resolve(__dirname, 'dist'),
-    filename: 'bundle.js',
+    path: path.resolve(__dirname, 'dist/public'),
+    filename: 'js/[name].js',
+    chunkFilename: 'js/[name].[contenthash].js',
+    publicPath: '/'
   },
   plugins: [
-    new HtmlWebpackPlugin({
-      template: 'index.html',
-    }),
     new EslintWebpackPlugin({
       extensions: ['ts', 'tsx'],
+    }),
+    new CopyWebpackPlugin({
+      patterns: [{ from: path.resolve(__dirname, 'assets'), to: 'assets' }],
+    }),
+    new RouteManifestPlugin({
+      inline: false,
+      filename: 'route-manifest.json',
+      routes: (file) => {
+        /* eslint-disable-next-line no-param-reassign */
+        file = file
+          .replace(path.join(__dirname, '../src'), '')
+          .replace(/\.[tj]sx?$/, '')
+
+        if (!file.includes('/pages/')) return '*'
+        let name = '/' + file.replace('../pages/', '').toLowerCase()
+        return name === '/home'
+          ? '/'
+          : name === '/post'
+          ? '/post/:postId'
+          : name
+      },
     }),
   ],
   devServer: {
@@ -70,4 +159,4 @@ const config: Configuration & { devServer?: {} } = {
   },
 }
 
-export default config
+export default [client, server]
