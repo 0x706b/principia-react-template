@@ -20,9 +20,7 @@ const server: Configuration = {
   externalsPresets: { node: true },
   externals: [
     // @ts-expect-error
-    WebpackNodeExternals({
-      allowlist: ['solid-app-router', 'solid-js', 'solid-js/web'],
-    }),
+    WebpackNodeExternals({}),
     {
       ['./public/route-manifest.json']:
         'require("./public/route-manifest.json")',
@@ -37,22 +35,12 @@ const server: Configuration = {
           {
             loader: 'babel-loader',
             options: {
+              plugins: ['babel-plugin-styled-components'],
               presets: [['@babel/preset-react', { runtime: 'automatic' }]],
             },
           },
           {
             loader: 'ts-loader',
-          },
-        ],
-      },
-      {
-        test: /\.jsx$/,
-        use: [
-          {
-            loader: 'babel-loader',
-            options: {
-              presets: ['@babel/preset-react'],
-            },
           },
         ],
       },
@@ -73,7 +61,6 @@ const server: Configuration = {
   },
   resolve: {
     extensions: ['.tsx', '.ts', '.js', '.jsx'],
-    conditionNames: ['default', 'import', 'solid', 'node'],
   },
   experiments: {
     topLevelAwait: true,
@@ -94,10 +81,8 @@ const client: Configuration & { devServer?: {} } = {
           {
             loader: 'babel-loader',
             options: {
-              plugins: [
-                ['babel-plugin-styled-components', { pure: true }],
-              ],
-              presets: ['@babel/preset-env', ['@babel/preset-react', { runtime: 'automatic' }]],
+              plugins: ['babel-plugin-styled-components'],
+              presets: [['@babel/preset-react', { runtime: 'automatic' }]],
             },
           },
           {
@@ -118,7 +103,7 @@ const client: Configuration & { devServer?: {} } = {
     path: path.resolve(__dirname, 'dist/public'),
     filename: 'js/[name].js',
     chunkFilename: 'js/[name].[contenthash].js',
-    publicPath: '/'
+    publicPath: '/',
   },
   plugins: [
     new EslintWebpackPlugin({
@@ -138,11 +123,7 @@ const client: Configuration & { devServer?: {} } = {
 
         if (!file.includes('/pages/')) return '*'
         let name = '/' + file.replace('../pages/', '').toLowerCase()
-        return name === '/home'
-          ? '/'
-          : name === '/post'
-          ? '/post/:postId'
-          : name
+        return name === '/home' ? '/' : name
       },
     }),
   ],

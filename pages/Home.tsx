@@ -1,5 +1,13 @@
 import React from 'react'
 
-const Home = () => <p>Homepage</p>
+const Home = () => (
+  <p
+    css={`
+      color: blue;
+    `}
+  >
+    Homepage
+  </p>
+)
 
 export default Home
