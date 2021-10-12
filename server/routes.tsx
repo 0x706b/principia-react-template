@@ -33,7 +33,7 @@ export const SSR = e.get('*', (req, res) =>
               </StaticRouter>,
             )
 
-            const passthrough = new stream.PassThrough()
+            const passthrough = new StyleSheetPassthrough(sheet, res)
 
             const { pipe } = renderToPipeableStream(jsx, {
               onError: (err) => {
@@ -41,17 +41,14 @@ export const SSR = e.get('*', (req, res) =>
                 console.error(err)
               },
               onCompleteShell: () => {
-                const styles   = sheet.getStyleTags()
-                const start    = htmlStart(entry, styles)
+                const initialStyles = sheet.getStyleTags()
+                // @ts-expect-error
+                sheet.instance.clearTag()
+                const start    = htmlStart(entry, initialStyles)
                 res.statusCode = errored ? 500 : 200
                 res.setHeader('content-type', 'text/html')
                 res.write(start)
                 pipe(passthrough)
-                if (!styles.includes('style')) {
-                  sheet.interleaveWithNodeStream(passthrough).pipe(res)
-                } else {
-                  passthrough.pipe(res)
-                }
               },
             })
 
@@ -63,3 +60,43 @@ export const SSR = e.get('*', (req, res) =>
     )
   }),
 )
+
+class StyleSheetPassthrough extends stream.Writable {
+  constructor(
+    private sheet: ServerStyleSheet,
+    private _writable: stream.Writable & { flush?: () => void },
+  ) {
+    super()
+  }
+
+  _write(
+    chunk: any,
+    encoding: BufferEncoding,
+    callback: (err?: Error | null) => void,
+  ) {
+    let styleTags = this.sheet.getStyleTags()
+    // @ts-expect-error
+    this.sheet.instance.clearTag()
+    if (styleTags.isNonEmpty) {
+      this._writable.write(styleTags, encoding, (err) => {
+        if (err) {
+          console.error(err)
+          this.end()
+        } else {
+          this._writable.write(chunk, encoding, callback)
+        }
+      })
+    } else {
+      this._writable.write(chunk, encoding, callback)
+    }
+  }
+  flush() {
+    if (typeof this._writable.flush === 'function') {
+      this._writable.flush()
+    }
+  }
+  _final(cb: (err?: Error | null) => void) {
+    this._writable.end(cb)
+  }
+}
+
