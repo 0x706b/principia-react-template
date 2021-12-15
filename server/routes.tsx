@@ -1,3 +1,4 @@
+import type { Response } from 'express'
 import type { StaticRouterContext } from 'react-router'
 
 import * as e from '@principia/express'
@@ -61,42 +62,55 @@ export const SSR = e.get('*', (req, res) =>
   }),
 )
 
-class StyleSheetPassthrough extends stream.Writable {
+export class StyleSheetPassthrough extends stream.Writable {
   constructor(
     private sheet: ServerStyleSheet,
-    private _writable: stream.Writable & { flush?: () => void },
+    private _writable: stream.Writable,
   ) {
     super()
+  }
+
+  writeChunk(
+    chunk: any,
+    encoding: BufferEncoding,
+    cb: (err?: Error | null) => void,
+  ): void {
+    if (!this._writable.write(chunk, encoding)) {
+      this._writable.once('drain', cb)
+    } else {
+      cb()
+    }
   }
 
   _write(
     chunk: any,
     encoding: BufferEncoding,
-    callback: (err?: Error | null) => void,
-  ) {
+    cb: (err?: Error | null) => void,
+  ): void {
+    let needsDrain = false
+    // Get the style tags from the `ServerStyleSheet` since the last write
     let styleTags = this.sheet.getStyleTags()
+    // Clear the style tags we just got from the `ServerStyleSheet` instance
+    // styled-components does not expose `clearTag` on `instance` so...
     // @ts-expect-error
     this.sheet.instance.clearTag()
+    // Write the style tags to the response
     if (styleTags.isNonEmpty) {
-      this._writable.write(styleTags, encoding, (err) => {
-        if (err) {
-          console.error(err)
-          this.end()
-        } else {
-          this._writable.write(chunk, encoding, callback)
-        }
+      needsDrain = !this._writable.write(styleTags, 'utf8')
+    }
+    // If the destination needs draining after writing the style tags,
+    // wait for it to drain, then write the chunk from React. Otherwise,
+    // just write the chunk.
+    if (needsDrain) {
+      this._writable.once('drain', () => {
+        this.writeChunk(chunk, encoding, cb)
       })
     } else {
-      this._writable.write(chunk, encoding, callback)
+      this.writeChunk(chunk, encoding, cb)
     }
   }
-  flush() {
-    if (typeof this._writable.flush === 'function') {
-      this._writable.flush()
-    }
-  }
-  _final(cb: (err?: Error | null) => void) {
-    this._writable.end(cb)
+
+  _final(): void {
+    this._writable.end()
   }
 }
-

@@ -4,13 +4,15 @@ import { BrowserRouter } from 'react-router-dom'
 
 import { App } from './App'
 
-const root = document.getElementById('app')
+const domRoot = document.getElementById('app')
 
-if (!root) {
+if (!domRoot) {
   throw new Error('Failed to find the root element')
 }
 
-ReactDOM.createRoot(root, { hydrate: true }).render(
+const root = ReactDOM.hydrateRoot(domRoot)
+
+root.render(
   <React.StrictMode>
     <BrowserRouter>
       <App />
